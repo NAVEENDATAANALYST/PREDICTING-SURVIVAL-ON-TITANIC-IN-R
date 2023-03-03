@@ -1,0 +1,29 @@
+#DECISION TREE MODEL BUILDING
+
+#LOADING THE REQUIRED PACKAGES
+library(rpart)
+library(rpart.plot)
+
+
+#FIRST WE SHOULD PREPARE THE DATA FOR TRAINING
+train <- df[,-c(4,9,11)]
+train$Embarked <- ifelse(train$Embarked=="S",1,ifelse(train$Embarked=="C",2,3))
+
+
+#FIT THE DECISION TREE MODEL
+dt_model <- rpart(Survived~Pclass+Sex+Age+SibSp+Parch+Fare+Embarked,data=train,method="anova")
+
+
+#PLOTTING THE DECISION TREE MODEL
+rpart.plot(dt_model)
+
+
+#MAKING PREDICTION ON THE TESTING DATA
+test$Embarked <- ifelse(test$Embarked=="S",1,ifelse(test$Embarked=="C",2,3))
+prediction <- predict(dt_model,test)
+head(prediction,20)
+
+
+#CHECKING FOR THE PASSENGER ID WHO SURVIVED BASED ON THE PREDICTION
+Survival <- data.frame(PassengerId=test$PassengerId,Survived=ifelse(prediction> 0.5,1,0))
+Survival

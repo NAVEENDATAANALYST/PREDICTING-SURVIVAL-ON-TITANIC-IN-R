@@ -1,0 +1,183 @@
+---
+title: "PREDICTING SURVIVAL ON TITANIC"
+author: "KANCHARLA NAVEEN KUMAR"
+date: "2023-03-03"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+#DATA PREPROCESSING
+
+
+```{r}
+#LOADING THE DATA
+df <- read.csv('train.csv')
+df1 <- read.csv('test.csv')
+head(df)
+head(df1)
+
+#DIMENSIONS OF DATA
+dim(df)
+dim(df1)
+
+#DISPLAYING THE SUMMARY OF THE DATA
+summary(df)
+summary(df1)
+
+#DISPLAYING THE STRUCTURE OF THE DATA
+str(df)
+str(df1)
+
+#CHECKING THE DATA FOR MISSING VALUES
+sum(is.na(df))
+sum(is.na(df1))
+#177 MISSING VALUES FOUND.
+
+#WE NEED TO CLEAN THE DATA. SO FIRST WE NEED TO KNOW WHERE THE MISSING VALUES ARE PRESENT
+colSums(is.na(df))
+colSums(is.na(df1))
+#ALL THE MISSING VALUES ARE IN THE AGE COLUMN. WE NEED TO CLEAN IT
+
+#THERE ARE THREE WAYS OF CLEANING THE DATA.
+#1. USE NA.OMIT. IT WILL OMIT THE NA VALUES BUT WE WILL LOOSE SOME DATA
+#2. USE COMPLETE.CASES. HERE ALSO WE WILL LOOSE SOME DATA
+#3. USE REPLACE METHOD. REPLACE EITHER WITH MEAN OR MEDIAN.
+#HERE FOR COLUMN AGE THE BEST WAY TO CLEAN THE COLUMN IS TO REPLACE WITH MEDIAN
+
+df$Age[is.na(df$Age)] <- median(df$Age,na.rm=TRUE)
+sum(is.na(df))
+colSums(is.na(df))
+#NOW THE DATA IS CLEAN
+
+df1$Age[is.na(df1$Age)] <- median(df1$Age,na.rm=TRUE)
+
+df1$Fare[is.na(df1$Fare)] <- mean(df1$Fare,na.rm=TRUE)
+
+sum(is.na(df1))
+colSums(is.na(df1))
+
+#CLASSIFYING THE SEX COLUMN
+df$Sex <- ifelse(df$Sex=="male", 0, 1)
+str(df)
+
+df1$Sex <- ifelse(df1$Sex=="male", 0, 1)
+str(df1)
+
+
+#CONVERTING THE EMBARKED COLUMN INTO FACTOR
+df$Embarked <- as.factor(df$Embarked)
+str(df)
+
+df1$Embarked <- as.factor(df1$Embarked)
+str(df)
+
+#THERE ARE SOME IRRELEVANT VARIABLES MAINLY CATEGORICAL WHICH ARE NO NEED FOR TRAINING.
+#SO WE ARE REMOVING THEM AND TAKING THE NEW TRAINING DATA
+train <- df[,-c(4,9,11,12)]
+str(train)
+
+test <- df1
+
+```
+
+
+#EXPLORATORY DATA ANALYSIS AND VISUALIZATION
+
+
+```{r}
+#LOADING THE NECESSARY PACKAGES
+library(reshape2)
+library(GGally)
+library(ggExtra)
+library(dplyr)
+library(ggplot2)
+
+
+#DISPLAYING THE CORRELATION BETWEEN THE VARIABLES
+cor <- cor(train[,c("Survived","Pclass","Sex","Age","SibSp","Parch","Fare")])
+cor
+
+#PLOTTING THE CORRELATION MATRIX
+ggplot(melt(cor),aes(x=Var1,y=Var2, fill=value))+geom_tile()+scale_fill_gradient(low="white",high="red")+ theme(axis.text.x=element_text(angle=90,hjust=1))+labs(title="CORRELATION MATRIX")
+
+
+#PLOTTING THE CORRELATION PLOT OF ALL VARIABLES
+ggpairs(train)
+
+
+#PLOTTING THE FARE FOR AGE GROUP
+x=factor(ifelse(df$Age<18,"Child",ifelse(df$Age<65,"Adult","Senior")))
+ggplot(df,aes(x,y=Fare))+geom_point()
+
+
+#PLOTTING THE FARE DISTRIBUTION
+ggplot(df,aes(x=Fare))+geom_histogram(bins=30,binwidth=20)+labs(title="Distribution of Fare",x="Fare",y="Count")
+
+
+#PLOTTING THE SURVIVAL RATE BASED ON GENDER
+ggplot(df,aes(x=Sex,fill=factor(Survived)))+geom_bar(position="dodge")+labs(title="Survival Rate based on Gender",x="Gender",y="Count",fill ="Survived")
+
+
+#PLOTTING THE SURVIVAL RATE BASED ON AGE
+#CONVERTING THE AGE INTO FACTORS TO VISUALIZE BETTER
+x=factor(ifelse(df$Age<18,"Child",ifelse(df$Age<65,"Adult","Senior")))
+
+ggplot(df,aes(x,fill=factor(Survived)))+geom_bar(position="dodge")+labs(title="Survival Rate based on Age",x="Age",y="Count",fill="Survived")
+
+
+#PLOTTING THE SURVIVAL RATE BASED ON PASSENGER CLASS
+ggplot(df,aes(x=factor(Pclass),fill=factor(Survived)))+geom_bar(position="dodge")+labs(title="Survival Rate based on Passenger Class",x="Pclass",y="Count",fill="Survived")
+
+
+#PLOTTING THE SURVIVAL RATE BASED ON NUMBER OF FAMILY MEMBERS
+
+#FIRST WE NEED TO COUNT THE FAMILY MEMBERS I.E.. SIBSP+PARCH
+count <- df%>% 
+  mutate(Count=SibSp+Parch+1)
+
+ggplot(count,aes(x=Count, fill=factor(Survived)))+geom_bar(position="dodge")+labs(title="Survival Rate based on Family Size",x="Family Size",y="Count",fill="Survived")
+
+
+```
+
+
+#DECISION TREE MODEL BUILDING
+
+
+```{r}
+#LOADING THE REQUIRED PACKAGES
+library(rpart)
+library(rpart.plot)
+
+
+#FIRST WE SHOULD PREPARE THE DATA FOR TRAINING
+train <- df[,-c(4,9,11)]
+train$Embarked <- ifelse(train$Embarked=="S",1,ifelse(train$Embarked=="C",2,3))
+
+
+#FIT THE DECISION TREE MODEL
+dt_model <- rpart(Survived~Pclass+Sex+Age+SibSp+Parch+Fare+Embarked,data=train,method="anova")
+
+
+#PLOTTING THE DECISION TREE MODEL
+rpart.plot(dt_model)
+
+
+#MAKING PREDICTION ON THE TESTING DATA
+test$Embarked <- ifelse(test$Embarked=="S",1,ifelse(test$Embarked=="C",2,3))
+prediction <- predict(dt_model,test)
+head(prediction,20)
+
+
+#CHECKING FOR THE PASSENGER ID WHO SURVIVED BASED ON THE PREDICTION
+Survival <- data.frame(PassengerId=test$PassengerId,Survived=ifelse(prediction> 0.5,1,0))
+Survival
+
+
+
+```
+

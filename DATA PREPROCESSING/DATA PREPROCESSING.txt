@@ -1,0 +1,69 @@
+#DATA PREPROCESSING
+
+#LOADING THE DATA
+df <- read.csv('train.csv')
+df1 <- read.csv('test.csv')
+head(df)
+head(df1)
+
+#DIMENSIONS OF DATA
+dim(df)
+dim(df1)
+
+#DISPLAYING THE SUMMARY OF THE DATA
+summary(df)
+summary(df1)
+
+#DISPLAYING THE STRUCTURE OF THE DATA
+str(df)
+str(df1)
+
+#CHECKING THE DATA FOR MISSING VALUES
+sum(is.na(df))
+sum(is.na(df1))
+#177 MISSING VALUES FOUND.
+
+#WE NEED TO CLEAN THE DATA. SO FIRST WE NEED TO KNOW WHERE THE MISSING VALUES ARE PRESENT
+colSums(is.na(df))
+colSums(is.na(df1))
+#ALL THE MISSING VALUES ARE IN THE AGE COLUMN. WE NEED TO CLEAN IT
+
+#THERE ARE THREE WAYS OF CLEANING THE DATA.
+#1. USE NA.OMIT. IT WILL OMIT THE NA VALUES BUT WE WILL LOOSE SOME DATA
+#2. USE COMPLETE.CASES. HERE ALSO WE WILL LOOSE SOME DATA
+#3. USE REPLACE METHOD. REPLACE EITHER WITH MEAN OR MEDIAN.
+#HERE FOR COLUMN AGE THE BEST WAY TO CLEAN THE COLUMN IS TO REPLACE WITH MEDIAN
+
+df$Age[is.na(df$Age)] <- median(df$Age,na.rm=TRUE)
+sum(is.na(df))
+colSums(is.na(df))
+#NOW THE DATA IS CLEAN
+
+df1$Age[is.na(df1$Age)] <- median(df1$Age,na.rm=TRUE)
+
+df1$Fare[is.na(df1$Fare)] <- mean(df1$Fare,na.rm=TRUE)
+
+sum(is.na(df1))
+colSums(is.na(df1))
+
+#CLASSIFYING THE SEX COLUMN
+df$Sex <- ifelse(df$Sex=="male", 0, 1)
+str(df)
+
+df1$Sex <- ifelse(df1$Sex=="male", 0, 1)
+str(df1)
+
+
+#CONVERTING THE EMBARKED COLUMN INTO FACTOR
+df$Embarked <- as.factor(df$Embarked)
+str(df)
+
+df1$Embarked <- as.factor(df1$Embarked)
+str(df)
+
+#THERE ARE SOME IRRELEVANT VARIABLES MAINLY CATEGORICAL WHICH ARE NO NEED FOR TRAINING.
+#SO WE ARE REMOVING THEM AND TAKING THE NEW TRAINING DATA
+train <- df[,-c(4,9,11,12)]
+str(train)
+
+test <- df1

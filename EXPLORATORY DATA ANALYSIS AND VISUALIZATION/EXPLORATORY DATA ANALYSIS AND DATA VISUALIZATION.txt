@@ -1,0 +1,53 @@
+#EXPLORATORY DATA ANALYSIS AND VISUALIZATION
+
+#LOADING THE NECESSARY PACKAGES
+library(reshape2)
+library(GGally)
+library(ggExtra)
+library(dplyr)
+library(ggplot2)
+
+
+#DISPLAYING THE CORRELATION BETWEEN THE VARIABLES
+cor <- cor(train[,c("Survived","Pclass","Sex","Age","SibSp","Parch","Fare")])
+cor
+
+#PLOTTING THE CORRELATION MATRIX
+ggplot(melt(cor),aes(x=Var1,y=Var2, fill=value))+geom_tile()+scale_fill_gradient(low="white",high="red")+ theme(axis.text.x=element_text(angle=90,hjust=1))+labs(title="CORRELATION MATRIX")
+
+
+#PLOTTING THE CORRELATION PLOT OF ALL VARIABLES
+ggpairs(train)
+
+
+#PLOTTING THE FARE FOR AGE GROUP
+x=factor(ifelse(df$Age<18,"Child",ifelse(df$Age<65,"Adult","Senior")))
+ggplot(df,aes(x,y=Fare))+geom_point()
+
+
+#PLOTTING THE FARE DISTRIBUTION
+ggplot(df,aes(x=Fare))+geom_histogram(bins=30,binwidth=20)+labs(title="Distribution of Fare",x="Fare",y="Count")
+
+
+#PLOTTING THE SURVIVAL RATE BASED ON GENDER
+ggplot(df,aes(x=Sex,fill=factor(Survived)))+geom_bar(position="dodge")+labs(title="Survival Rate based on Gender",x="Gender",y="Count",fill ="Survived")
+
+
+#PLOTTING THE SURVIVAL RATE BASED ON AGE
+#CONVERTING THE AGE INTO FACTORS TO VISUALIZE BETTER
+x=factor(ifelse(df$Age<18,"Child",ifelse(df$Age<65,"Adult","Senior")))
+
+ggplot(df,aes(x,fill=factor(Survived)))+geom_bar(position="dodge")+labs(title="Survival Rate based on Age",x="Age",y="Count",fill="Survived")
+
+
+#PLOTTING THE SURVIVAL RATE BASED ON PASSENGER CLASS
+ggplot(df,aes(x=factor(Pclass),fill=factor(Survived)))+geom_bar(position="dodge")+labs(title="Survival Rate based on Passenger Class",x="Pclass",y="Count",fill="Survived")
+
+
+#PLOTTING THE SURVIVAL RATE BASED ON NUMBER OF FAMILY MEMBERS
+
+#FIRST WE NEED TO COUNT THE FAMILY MEMBERS I.E.. SIBSP+PARCH
+count <- df%>% 
+  mutate(Count=SibSp+Parch+1)
+
+ggplot(count,aes(x=Count, fill=factor(Survived)))+geom_bar(position="dodge")+labs(title="Survival Rate based on Family Size",x="Family Size",y="Count",fill="Survived")
